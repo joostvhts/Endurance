@@ -8,6 +8,10 @@ export interface AddWatchedClassRequest {
   startDateTime: string;
 }
 
+export interface AddWatchedClassResponse {
+  requiresVerification: boolean;
+}
+
 function getBaseUrl(): string {
   const { apiBaseUrl } = getPreferenceValues<{ apiBaseUrl: string }>();
   return apiBaseUrl.replace(/\/+$/, "");
@@ -52,9 +56,9 @@ export function getClasses(venueId: string, startDate: string): Promise<Schedule
   return apiFetch(`/get-classes?venueId=${encodeURIComponent(venueId)}&startDate=${encodeURIComponent(startDate)}`);
 }
 
-export function addWatchedClass(request: AddWatchedClassRequest): Promise<void> {
+export function addWatchedClass(request: AddWatchedClassRequest): Promise<AddWatchedClassResponse> {
   return apiFetch("/add-classes", {
     method: "POST",
     body: JSON.stringify(request),
-  }, false);
+  });
 }

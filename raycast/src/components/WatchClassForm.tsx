@@ -30,14 +30,18 @@ export default function WatchClassForm({ cls, venueName }: WatchClassFormProps) 
     }
 
     try {
-      await addWatchedClass({
+      const result = await addWatchedClass({
         venueId: cls.venueId,
         classId: cls.id,
         emailAddress: normalizedEmail,
         startDateTime: cls.startTime,
       });
       await setSavedEmailAddress(normalizedEmail);
-      await showToast({ style: Toast.Style.Success, title: "Now watching this class!" });
+      await showToast({
+        style: Toast.Style.Success,
+        title: result.requiresVerification ? "Check your inbox" : "Now watching this class!",
+        message: result.requiresVerification ? "Verify your email to activate this alert." : undefined,
+      });
       pop();
     } catch (error: unknown) {
       await showToast({
