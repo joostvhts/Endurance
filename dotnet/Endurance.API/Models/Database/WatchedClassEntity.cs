@@ -18,6 +18,9 @@ public class WatchedClassEntity
     [Column("is_active")]
     public bool IsActive { get; set; }
 
+    [Column("is_pending_verification")]
+    public bool IsPendingVerification { get; set; }
+
     [Column("created_at")]
     public DateTime CreatedAt { get; set; } = DateTime.Now;
     
@@ -29,4 +32,10 @@ public class WatchedClassEntity
 
     [ForeignKey("NotifierSettingsId")]
     public NotifierSettingsEntity NotifierSettings { get; set; }
+
+    [Column("verified_email_id")]
+    public int? VerifiedEmailId { get; set; }
+
+    [ForeignKey("VerifiedEmailId")]
+    public VerifiedEmailEntity? VerifiedEmail { get; set; }
 }

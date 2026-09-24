@@ -37,6 +37,7 @@ public class WatchedClassRepository : IWatchedClassRepository
     {
         return await _context.WatchedClasses
             .Include(w => w.NotifierSettings)
+            .Include(w => w.VerifiedEmail)
             .Where(x => x.StartDateTime > DateTime.Now && (!onlyActive || x.IsActive))
             .ToListAsync();
     }

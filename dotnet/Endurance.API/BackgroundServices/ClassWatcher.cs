@@ -69,7 +69,15 @@ public class ClassWatcher : BackgroundService
                                             VenueName = matchingClass.VenueName
                                         };
                                         
-                                        notifyService.Notify(watchedClass, classInfoModel);
+                                        try
+                                        {
+                                            await notifyService.Notify(watchedClass, classInfoModel);
+                                        }
+                                        catch (Exception exception)
+                                        {
+                                            _logger.LogError(exception,
+                                                "Failed to notify watcher {WatcherId}", watchedClass.Id);
+                                        }
                                     }
                                 }
                             }
@@ -81,7 +89,7 @@ public class ClassWatcher : BackgroundService
             }
             catch (Exception e)
             {
-                _logger.LogError("Error refreshing scheduled classes: ", e.Message, e.InnerException);
+                _logger.LogError(e, "Error refreshing scheduled classes");
                 await Task.Delay(TimeSpan.FromMinutes(RETRY_INTERVAL_MINUTES), stoppingToken);
             }
         }

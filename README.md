@@ -36,7 +36,7 @@ The project is divided into two main parts:
 
 ### Configuration
 
-- **Backend Configuration**: Adjust the `appsettings.json` or use environment variables to set up database connections and SMTP settings. An example appsettings.json is included.
+- **Backend Configuration**: Use an untracked `appsettings.Development.json` for local settings. Use environment variables in production.
 
   ```
   {
@@ -47,15 +47,17 @@ The project is divided into two main parts:
        "Smtp": {
            "Server": "{SMTP host}",
            "Port": {SMTP port},
+           "EnableSsl": true,
            "From": "{From email address}",
            "Username": "{SMTP username}",
            "Password": "{SMTP password}"
-       }
+       },
+       "FrontendBaseUrl": "https://your-public-frontend-url.example"
    }
   }
   ```
 
-- **Frontend Configuration**: Configure the `VITE_API_BASEURL` environment variable in `.env` pointing to the backend. An example .env file is included.
+- **Frontend Configuration**: Configure `VITE_API_BASEURL` in an untracked `.env` file pointing to the backend.
 
 ### Setting up locally
 

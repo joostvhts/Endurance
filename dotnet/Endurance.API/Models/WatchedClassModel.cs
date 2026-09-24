@@ -12,4 +12,6 @@ public class WatchedClassModel
     
     public DateTime StartDateTime { get; set; }
     public NotifierSettingsEntity NotifierSettings { get; set; }
+    public int? VerifiedEmailId { get; set; }
+    public string? UnsubscribeToken { get; set; }
 }

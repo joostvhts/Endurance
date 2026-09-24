@@ -10,6 +10,7 @@ using Endurance.API.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
+using System.Net.Mail;
 using Refit;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -24,9 +25,15 @@ var settings = new Settings();
 builder.Configuration.AddEnvironmentVariables();
 builder.Configuration.GetSection("Settings").Bind(settings);
 
+if (string.IsNullOrWhiteSpace(settings.FrontendBaseUrl))
+{
+    throw new InvalidOperationException("Settings:FrontendBaseUrl must be configured.");
+}
+
 // Register settings as a singleton so it can be injected wherever needed
 builder.Services.AddSingleton(settings.ConnectionStrings);
 builder.Services.AddSingleton(settings.Smtp);
+builder.Services.AddSingleton(settings);
 builder.Services.AddSingleton<IAppVersionProvider>(_ => new AppVersionProvider(initialVersion: "6.25.0"));
 
 builder.Services.AddCors(opt => opt.AddPolicy("CorsPolicy", c =>
@@ -54,6 +61,7 @@ builder.Services.AddDbContext<EnduranceDbContext>(options =>
 
 builder.Services.AddScoped<IWatchedClassRepository, WatchedClassRepository>();
 builder.Services.AddScoped<IWatchedClassService, WatchedClassService>();
+builder.Services.AddScoped<IVerificationService, VerificationService>();
 
 builder.Services.AddSingleton<IMemoryCache, MemoryCache>();
 builder.Services.AddTransient<IEmailService, EmailService>();
@@ -123,20 +131,65 @@ app.MapGet("/get-classes", async ([FromQuery] string venueId, [FromQuery] DateTi
     .WithName("GetClasses")
     .WithOpenApi();
 
-app.MapPost("/add-classes", async (AddWatchedClassRequest addWatchedClassRequest, IWatchedClassService watchedClassService) =>
+app.MapPost("/add-classes", async (AddWatchedClassRequest addWatchedClassRequest,
+        IWatchedClassService watchedClassService, IVerificationService verificationService) =>
     {
+        if (!MailAddress.TryCreate(addWatchedClassRequest.EmailAddress, out var emailAddress))
+        {
+            return Results.BadRequest("Please provide a valid email address.");
+        }
+
         try
         {
-            await watchedClassService.AddEmailWatcher(addWatchedClassRequest.VenueId, addWatchedClassRequest.ClassId,
-                addWatchedClassRequest.EmailAddress, addWatchedClassRequest.StartDateTime);
-            return Results.Ok();
+            var verifiedEmail = await verificationService.GetOrCreateVerifiedEmail(emailAddress.Address);
+            await watchedClassService.AddEmailWatcher(addWatchedClassRequest.VenueId,
+                addWatchedClassRequest.ClassId, addWatchedClassRequest.StartDateTime, verifiedEmail);
+            await verificationService.SendVerificationEmailIfNeeded(verifiedEmail);
+
+            return Results.Ok(new AddWatchedClassResult
+            {
+                RequiresVerification = !verifiedEmail.IsVerified
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Results.BadRequest(ex.Message);
         }
         catch (Exception ex)
         {
-            return Results.Problem(ex.Message);
+            app.Logger.LogError(ex, "Failed to add class watcher");
+            return Results.Problem("Unable to add the class alert. Please try again later.");
         }
     })
     .WithName("AddClass")
     .WithOpenApi();
+
+app.MapPost("/verify-email", async (VerifyEmailRequest request, IVerificationService verificationService,
+        IWatchedClassService watchedClassService) =>
+    {
+        var verifiedEmailId = await verificationService.VerifyEmail(request.Token);
+        if (verifiedEmailId is null)
+        {
+            return Results.BadRequest("This verification link is invalid or has expired.");
+        }
+
+        await watchedClassService.ActivatePendingWatchers(verifiedEmailId.Value);
+        return Results.Ok();
+    })
+    .WithName("VerifyEmail");
+
+app.MapPost("/unsubscribe", async (UnsubscribeRequest request, IVerificationService verificationService,
+        IWatchedClassService watchedClassService) =>
+    {
+        var verifiedEmailId = await verificationService.Unsubscribe(request.Token);
+        if (verifiedEmailId is null)
+        {
+            return Results.BadRequest("This unsubscribe link is invalid.");
+        }
+
+        await watchedClassService.DisableAllWatchers(verifiedEmailId.Value);
+        return Results.Ok();
+    })
+    .WithName("Unsubscribe");
 
 app.Run();

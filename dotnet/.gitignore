@@ -9,6 +9,7 @@
 *.user
 *.userosscache
 *.sln.docstates
+Endurance.API/appsettings.Development.json
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs

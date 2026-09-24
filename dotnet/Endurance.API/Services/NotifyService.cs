@@ -8,21 +8,29 @@ public class NotifyService : INotifyService
 {
     private readonly IEmailService _emailService;
     private readonly IWatchedClassService _watchedClassService;
+    private readonly IVerificationService _verificationService;
     
-    public NotifyService(IEmailService emailService, IWatchedClassService watchedClassService)
+    public NotifyService(IEmailService emailService, IWatchedClassService watchedClassService,
+        IVerificationService verificationService)
     {
         _emailService = emailService;
         _watchedClassService = watchedClassService;
+        _verificationService = verificationService;
     }
     
-    public Task Notify(WatchedClassModel watchedClassModel, ClassInfoModel classInfoModel)
+    public async Task Notify(WatchedClassModel watchedClassModel, ClassInfoModel classInfoModel)
     {
         if (watchedClassModel.NotifierSettings.Type == NotifierType.Email)
         {
-            _emailService.SendEmail(watchedClassModel, classInfoModel);
+            if (!await _verificationService.IsEmailVerified(watchedClassModel.VerifiedEmailId))
+            {
+                await _watchedClassService.DisableWatcher(watchedClassModel.Id);
+                return;
+            }
+
+            await _emailService.SendEmail(watchedClassModel, classInfoModel);
         }
 
-        _watchedClassService.DisableWatcher(watchedClassModel.Id);
-        return Task.CompletedTask;
+        await _watchedClassService.DisableWatcher(watchedClassModel.Id);
     }
 }

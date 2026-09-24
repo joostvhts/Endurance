@@ -147,7 +147,7 @@ public static class BasicEmailTemplate
                       </tr>
                     </tbody>
                   </table>
-                  <p style=""font-family: Helvetica, sans-serif; font-size: 16px; font-weight: normal; margin: 0; margin-bottom: 16px;""></p>
+                  <p style=""font-family: Helvetica, sans-serif; font-size: 11px; font-weight: normal; margin: 24px 0 16px; color: #6b7280; text-align: center;"">Don't want to receive any more class alerts? <a href=""{UnsubscribeUrl}"">Unsubscribe</a>.</p>
                   <p style=""font-family: Helvetica, sans-serif; font-size: 16px; font-weight: normal; margin: 0; margin-bottom: 16px;""></p>
                 </td>
               </tr>
