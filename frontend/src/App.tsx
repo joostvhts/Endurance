@@ -1,12 +1,23 @@
+import { useState } from "react";
 import { Route, Routes, useNavigate } from "react-router-dom";
 import ClassSelector from "./ClassSelector";
 import VenueSelectionComponent from "./VenueSelection";
 import { Toaster } from "sonner";
 import VenueHeader from "./components/VenueHeader";
 import DarkModeToggle from "./components/DarkModeToggle";
+import VerifyEmailDialog from "./components/VerifyEmailDialog";
+import UnsubscribeDialog from "./components/UnsubscribeDialog";
 
 function App() {
   const navigate = useNavigate();
+  const [emailAction, setEmailAction] = useState(() => {
+    const emailAction = new URLSearchParams(window.location.hash.slice(1));
+    return {
+      action: emailAction.get("action"),
+      token: emailAction.get("token"),
+    };
+  });
+  const clearEmailAction = () => setEmailAction({ action: null, token: null });
 
   return (
     <>
@@ -67,6 +78,12 @@ function App() {
           </footer>
         </div>
       </div>
+      {emailAction.action === "verify-email" && (
+        <VerifyEmailDialog token={emailAction.token} onClose={clearEmailAction} />
+      )}
+      {emailAction.action === "unsubscribe" && (
+        <UnsubscribeDialog token={emailAction.token} onClose={clearEmailAction} />
+      )}
       <Toaster />
     </>
   );

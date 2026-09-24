@@ -62,7 +62,7 @@ export const ClassDetailsDialog: React.FC<ClassDetailsDialogProps> = ({
     }
 
     addClass(payload)
-      .then(() => {
+      .then((result) => {
         setLoading(false);
 
         onClose();
@@ -76,17 +76,26 @@ export const ClassDetailsDialog: React.FC<ClassDetailsDialogProps> = ({
           startTime: startISO,
         });
 
-        toast("Added notification for class", {
-          description: `${classDetails.activity.name} on ${new Date(
-            classDetails.startTime
-          ).toDateString()} at ${new Date(classDetails.startTime).toLocaleTimeString([], {
-            timeStyle: "short",
-          })}`,
-        });
+        if (result.requiresVerification) {
+          toast("Check your inbox", {
+            description: "Verify your email address to activate your class alert.",
+          });
+        } else {
+          toast("Added notification for class", {
+            description: `${classDetails.activity.name} on ${new Date(
+              classDetails.startTime
+            ).toDateString()} at ${new Date(classDetails.startTime).toLocaleTimeString([], {
+              timeStyle: "short",
+            })}`,
+          });
+        }
       })
       .catch((error) => {
         console.error("Failed to add class:", error);
         setLoading(false);
+        toast.error("Failed to add watcher", {
+          description: error instanceof Error ? error.message : "Please try again.",
+        });
       });
   };
 
